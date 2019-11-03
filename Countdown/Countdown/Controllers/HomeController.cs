@@ -6,6 +6,7 @@ using System.Web.Mvc;
 
 namespace Countdown.Controllers
 {
+    [RequireHttps]
     public class HomeController : Controller
     {
         public ActionResult Index()
