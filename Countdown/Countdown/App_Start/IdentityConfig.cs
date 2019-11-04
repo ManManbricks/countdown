@@ -53,7 +53,7 @@ namespace Countdown
         }
     }
 
-        public class SmsService : IIdentityMessageService
+    public class SmsService : IIdentityMessageService
     {
         public Task SendAsync(IdentityMessage message)
         {
