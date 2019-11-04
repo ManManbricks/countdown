@@ -11,19 +11,49 @@ using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using Countdown.Models;
+using SendGrid;
+using SendGrid.Helpers.Mail;
+using System.Net.Mail;
+using System.Net;
+using System.Configuration;
+using System.Diagnostics;
 
 namespace Countdown
 {
     public class EmailService : IIdentityMessageService
     {
-        public Task SendAsync(IdentityMessage message)
+        public async Task SendAsync(IdentityMessage message)
         {
-            // Plug in your email service here to send an email.
-            return Task.FromResult(0);
+            await ConfigSendGridasync(message);
+        }
+
+        private async Task ConfigSendGridasync(IdentityMessage message)
+        {
+            var apiKey = ConfigurationManager.AppSettings["sendGridKey"];
+            var client = new SendGridClient(apiKey);
+            var from = new EmailAddress(
+                ConfigurationManager.AppSettings["sendGridFromAddress"],
+                ConfigurationManager.AppSettings["sendGridFromName"]);
+            var subject = message.Subject;
+            var to = new EmailAddress(message.Destination, message.Destination);
+            var plainTextContent = message.Body;
+            var htmlContent = message.Body;
+            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
+
+            // Send the email.
+            if (client != null)
+            {
+                await client.SendEmailAsync(msg);
+            }
+            else
+            {
+                Trace.TraceError("Failed to create Web transport.");
+                await Task.FromResult(0);
+            }
         }
     }
 
-    public class SmsService : IIdentityMessageService
+        public class SmsService : IIdentityMessageService
     {
         public Task SendAsync(IdentityMessage message)
         {
