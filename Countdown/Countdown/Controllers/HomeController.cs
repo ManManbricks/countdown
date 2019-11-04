@@ -6,6 +6,7 @@ using System.Web.Mvc;
 
 namespace Countdown.Controllers
 {
+    [Authorize]
     [RequireHttps]
     public class HomeController : Controller
     {
