@@ -73,6 +73,17 @@ namespace Countdown.Controllers
                 return View(model);
             }
 
+            // Require the user to have a confirmed email before they can log on.
+            var user = await UserManager.FindByNameAsync(model.Email);
+            if (user != null)
+            {
+                if (!await UserManager.IsEmailConfirmedAsync(user.Id))
+                {
+                    ViewBag.errorMessage = "You must have a confirmed email to log on.";
+                    return View("Error");
+                }
+            }
+
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, change to shouldLockout: true
             var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
@@ -155,8 +166,6 @@ namespace Countdown.Controllers
                 var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {
-                    await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
-
                     string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
                     var callbackUrl = Url.Action("ConfirmEmail", "Account",
                        new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
@@ -166,7 +175,10 @@ namespace Countdown.Controllers
                     identityMessage.Body = "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>";
                     await UserManager.EmailService.SendAsync(identityMessage);
 
-                    return RedirectToAction("Index", "Home");
+                    ViewBag.Message = "Check your email and confirm your account, you must be confirmed "
+                         + "before you can log in.";
+
+                    return View("Info");
                 }
                 AddErrors(result);
             }
