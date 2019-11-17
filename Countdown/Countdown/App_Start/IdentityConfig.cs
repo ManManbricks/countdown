@@ -29,8 +29,7 @@ namespace Countdown
 
         private async Task ConfigSendGridasync(IdentityMessage message)
         {
-            var apiKey = "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";
-            //var apiKey = ConfigurationManager.AppSettings["sendGridKey"];
+            var apiKey = ConfigurationManager.AppSettings["sendGridKey"];
             var client = new SendGridClient(apiKey);
             var from = new EmailAddress(
                 ConfigurationManager.AppSettings["sendGridFromAddress"],
