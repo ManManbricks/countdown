@@ -65,19 +65,33 @@ namespace Countdown.Models
     public class RegisterViewModel
     {
         [Required]
-        [EmailAddress]
+        [Display(Name = "First Name")]
+        [RegularExpression(@"^[a-zA-Z0-9]{1,50}$", ErrorMessage = "The first name must be from 1 to 50 characters in length")]
+        public string FirstName { get; set; }
+
+        [Display(Name = "Last Name")]
+        [RegularExpression(@"^[a-zA-Z0-9]{0,50}$", ErrorMessage = "The last name must be from 0 to 50 characters in length")]
+        public string LastName { get; set; }
+
+        [Required]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
         [Display(Name = "Email")]
         public string Email { get; set; }
 
+        
+        [Compare("Email",ErrorMessage = "Emails do not match")]
+        [Display(Name = "Confirm Email")]
+        public string ConfirmEmail { get; set; }
+
         [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
+        [StringLength(50, ErrorMessage = "The {0} must be from {2} to {1} characters in length", MinimumLength = 4)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; }
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Compare("Password", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; }
     }
 

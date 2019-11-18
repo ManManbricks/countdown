@@ -1,0 +1,102 @@
+﻿@model IEnumerable<Countdown.Models.ViewTodoViewModel>
+@{
+    ViewBag.Title = "TodoView";
+}
+
+<h2>TodoView</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+   
+</p>
+<table class="table">
+    <tr>
+        <th>
+           
+            Title
+        </th>
+        <th colspan="2">
+           Time Left
+        </th>
+        <th>
+            Owner
+        </th>
+        <th>
+            Assigned To
+        </th>
+        <th>
+           Completed
+        </th>
+        
+        <th></th>
+    </tr>
+
+@foreach (var item in Model)
+{
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Title)
+        </td>
+        <td colspan="2">
+            <div class="TimeLeftParent">
+                <span>
+                    @Html.DisplayFor(modelItem => item.TimeLeft)</span>
+
+<span class="output"></span>
+            </div>
+            
+        </td>
+        <td>
+           
+            @Html.DisplayFor(modelItem => item.Owner)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.AssignedTo)
+        </td>
+        <td>
+            @Html.CheckBoxFor(modelItem => item.IsCompleted)
+        </td>
+        
+        <td>
+             @*@Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
+            @Html.ActionLink("Details", "Details", new { id = item.Id }) |
+            @Html.ActionLink("Delete", "Delete", new { id = item.Id })-->*@
+        </td>
+    </tr>
+}
+
+</table>
+
+@*<script>
+    function RefreshTime(element) {
+        console.log(element);
+    }
+    function FormatTime() {
+        var timeLeftParent = document.querySelectorAll(".TimeLeftParent");
+        timeLeftParent.forEach(function (element) {
+            //setInterval(function () {
+                var currentTime = parseFloat(element.children[0].textContent)
+            var day = Math.floor(currentTime * 0.0000000115741);
+           
+                var remaining = day % 86400000;
+                var hour = Math.floor(remaining / 3600000);
+                remaining = remaining % 3600000;
+
+                 var minute = Math.floor(remaining / 60000);
+                remaining = remaining % 60000;
+
+                var second = Math.floor(remaining / 1000)
+
+                var output = element.children[1].textContent
+                //console.log(output);
+            element.children[0].textContent = currentTime - 1000;
+            
+                element.children[1].textContent = day + "d " + hour + "h " + minute + "m " + second + "s ";
+           // }, 1000);
+            
+        });
+        
+    }
+    window.onload = setInterval(FormatTime,1000);
+
+</script>*@

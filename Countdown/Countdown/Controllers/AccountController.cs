@@ -26,6 +26,7 @@ namespace Countdown.Controllers
         {
             UserManager = userManager;
             SignInManager = signInManager;
+            
         }
 
         public ApplicationSignInManager SignInManager
@@ -57,6 +58,16 @@ namespace Countdown.Controllers
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
         {
+            if (string.IsNullOrWhiteSpace(returnUrl))
+            {
+                returnUrl = "/";
+            }
+            
+            if (User.Identity.IsAuthenticated)
+            {
+                return RedirectToLocal(returnUrl);
+            }
+
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
@@ -162,25 +173,32 @@ namespace Countdown.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await UserManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
+                try
                 {
-                    string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    var callbackUrl = Url.Action("ConfirmEmail", "Account",
-                       new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                    var identityMessage = new IdentityMessage();
-                    identityMessage.Destination = user.Email;
-                    identityMessage.Subject = "Confirm your account";
-                    identityMessage.Body = "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>";
-                    await UserManager.EmailService.SendAsync(identityMessage);
+                    var user = new ApplicationUser { UserName = model.Email, Email = model.Email, FirstName = model.FirstName, LastName = model.LastName };
+                    var result = await UserManager.CreateAsync(user, model.Password);
+                    if (result.Succeeded)
+                    {
+                        string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                        var callbackUrl = Url.Action("ConfirmEmail", "Account",
+                           new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                        var identityMessage = new IdentityMessage();
+                        identityMessage.Destination = user.Email;
+                        identityMessage.Subject = "Confirm your account";
+                        identityMessage.Body = "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>";
+                        await UserManager.EmailService.SendAsync(identityMessage);
 
-                    ViewBag.Message = "Check your email and confirm your account, you must be confirmed "
-                         + "before you can log in.";
+                        ViewBag.Message = "Check your email and confirm your account, you must be confirmed "
+                             + "before you can log in.";
 
-                    return View("Info");
+                        return View("Info");
+                    }
+                    AddErrors(result);
+                }catch
+                {
+                    return View("Error");
                 }
-                AddErrors(result);
+               
             }
 
             // If we got this far, something failed, redisplay form

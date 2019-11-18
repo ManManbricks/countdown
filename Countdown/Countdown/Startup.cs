@@ -1,5 +1,7 @@
-﻿using Microsoft.Owin;
+﻿
+using Microsoft.Owin;
 using Owin;
+using System.Web.Mvc;
 
 [assembly: OwinStartupAttribute(typeof(Countdown.Startup))]
 namespace Countdown
@@ -8,7 +10,9 @@ namespace Countdown
     {
         public void Configuration(IAppBuilder app)
         {
+            
             ConfigureAuth(app);
+          
         }
     }
 }
