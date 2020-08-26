@@ -1,22 +1,65 @@
-﻿@model IEnumerable<Countdown.Models.ViewTodoViewModel>
+﻿@model Countdown.Models.ViewTodoViewModel
+
 @{
     ViewBag.Title = "TodoView";
+    int i = 0;
 }
 
 <h2>TodoView</h2>
 
-<p>
-    @Html.ActionLink("Create New", "Create")
-   
-</p>
+<div class="row">
+    <div class="col-8 p-4">
+        @using (Html.BeginForm("Filter", "Todo", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+        {
+            @Html.AntiForgeryToken();
+            <span class="font-weight-bold">Filter By: </span><br />
+            @Html.CheckBoxFor(x => x.TodoFilter.OwnedByMe, new { @id = "ownedbyme" }) @Html.LabelFor(x => x.TodoFilter.OwnedByMe, new { @class = "pr-4" })
+            @Html.CheckBoxFor(x => x.TodoFilter.OwnedByOthers, new { @id = "ownedbyothers" }) @Html.LabelFor(x => x.TodoFilter.OwnedByOthers, new { @class = "pr-4" })
+            @Html.CheckBoxFor(x => x.TodoFilter.AssignedToOthers, new { @id = "assignedtoothers" }) @Html.LabelFor(x => x.TodoFilter.AssignedToOthers, new { @class = "pr-4" })
+            @Html.CheckBoxFor(x => x.TodoFilter.Completed, new { @id = "completed" }) @Html.LabelFor(x => x.TodoFilter.Completed, new { @class = "pr-4" })<br />
+            @Html.CheckBoxFor(x => x.TodoFilter.Pending, new { @id = "pending" }) @Html.LabelFor(x => x.TodoFilter.Pending, new { @class = "pr-4" })<br />
+            <input type="submit" value="Apply Filter" class="btn btn-success" />
+            @Html.ActionLink("Clear Filter", "List", null, new { @class = "btn btn-dark" })
+        }
+
+
+
+    </div>
+    <div class="col-4 p-4 text-right">
+        @Html.ActionLink("Create New", "Create", null, new { @class = "btn btn-primary" })
+    </div>
+
+
+
+
+</div>
+
+
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="alert alert-success">
+
+        @ViewBag.SuccessMessage
+    </div>
+}
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger">
+
+        @ViewBag.ErrorMessage
+    </div>
+}
 <table class="table">
     <tr>
+        <th></th>
+
         <th>
-           
+
             Title
         </th>
         <th colspan="2">
-           Time Left
+            Time Left
         </th>
         <th>
             Owner
@@ -25,78 +68,169 @@
             Assigned To
         </th>
         <th>
-           Completed
+            Completed
         </th>
-        
-        <th></th>
+
     </tr>
 
-@foreach (var item in Model)
-{
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.Title)
-        </td>
-        <td colspan="2">
-            <div class="TimeLeftParent">
-                <span>
-                    @Html.DisplayFor(modelItem => item.TimeLeft)</span>
+    @foreach (var item in Model.TodoViewModels)
+    {
 
-<span class="output"></span>
-            </div>
-            
-        </td>
-        <td>
-           
-            @Html.DisplayFor(modelItem => item.Owner)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.AssignedTo)
-        </td>
-        <td>
-            @Html.CheckBoxFor(modelItem => item.IsCompleted)
-        </td>
-        
-        <td>
-             @*@Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
-            @Html.ActionLink("Details", "Details", new { id = item.Id }) |
-            @Html.ActionLink("Delete", "Delete", new { id = item.Id })-->*@
-        </td>
-    </tr>
-}
+        <tr class="@{string comp = item.IsCompleted ? "bg-info" : ""; @comp}" onclick="openDetails(this)">
+            <td>
+                <button class="btn btn-light btn-details">View Details</button>
+            </td>
+            <td>
+
+
+                @Html.DisplayFor(modelItem => item.Title)
+            </td>
+            <td colspan="2">
+                <div class="TimeLeftParent">
+                    <span class="sr-only">
+                        @Html.DisplayFor(modelItem => item.TimeLeft)
+                    </span>
+
+                    <span class="output"></span>
+                </div>
+
+            </td>
+
+
+
+            @{
+
+                bool ownedByCurrentUser = item.Owner.Equals(item.CurrentUserId);
+                string owner = ownedByCurrentUser ? "Me" : item.OwnerFirstName;
+                bool assignedToCurrentUser = item.AssignedTo.Equals(item.CurrentUserId);
+                string assignedto = assignedToCurrentUser ? "Me" : item.AssignedToFirstName;
+                string cssclassassigned = assignedToCurrentUser ? "font-weight-bold text-success" : "font-weight-bold";
+                string cssclassowned = ownedByCurrentUser ? "font-weight-bold text-success" : "font-weight-bold";
+                if (!ownedByCurrentUser)
+                {
+                    switch (i % 3)
+                    {
+                        case 0: cssclassowned += " owner c0"; break;
+                        case 1: cssclassowned += " owner c1"; break;
+                        case 2: cssclassowned += " owner c2"; break;
+                    }
+                }
+
+                if (!assignedToCurrentUser)
+                {
+                    switch (i % 3)
+                    {
+                        case 0: cssclassassigned += " assign c0"; break;
+                        case 1: cssclassassigned += " assign c1"; break;
+                        case 2: cssclassassigned += " assign c2"; break;
+                    }
+                }
+
+                <td>
+                    <span class="@cssclassowned">
+                        @owner
+                    </span>
+
+
+
+                </td>
+                <td>
+                    <span class="@cssclassassigned">
+                        @assignedto
+                    </span>
+                </td>
+
+                <td>
+                    @using (Html.BeginForm("MarkComplete", "Todo", new { id = item.Id }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        @Html.CheckBoxFor(modelItem => item.IsCompleted, assignedToCurrentUser ? (item.IsCompleted ? (object)new { @disabled = "disabled" } : (object)new { onchange = "Completed(this.form, this)" }) : (object)new { @disabled = "disabled" })
+                    }
+                </td>
+
+            }
+
+            @{i++;}
+
+
+        </tr>
+        <tr class="closedet">
+            <td colspan="7">
+                <div>
+                    <h4 class="text-center">Todo Task Details</h4>
+                    <div class="d-flex flex-row justify-content-center">
+                        <div class="p-2">
+                            <div><span class="font-weight-bold"> @Html.LabelFor(modelItem => item.Title): </span>@item.Title</div>
+                            <div><span class="font-weight-bold">@Html.LabelFor(modelItem => item.Owner): </span>@owner</div>
+                            <div><span class="font-weight-bold">@Html.LabelFor(modelItem => item.AssignedTo): </span>@assignedto</div>
+                            <div><span class="font-weight-bold">Status: </span>@{var result = item.IsCompleted == true ? "Completed" : "Pending";} @result</div>
+                        </div>
+                        <div class="p-2 pl-5">
+                            <div class="TimeLeftParent" style="font-size:4em;color:#ffd800">
+                                <span class="sr-only">
+                                    @Html.DisplayFor(modelItem => item.TimeLeft)
+                                </span>
+
+                                <span class="output"></span>
+                            </div>
+                        </div>
+                        
+                    </div>
+
+                </div>
+                
+            </td>
+        </tr>
+    }
 
 </table>
 
-@*<script>
-    function RefreshTime(element) {
-        console.log(element);
-    }
+<script>
+
     function FormatTime() {
         var timeLeftParent = document.querySelectorAll(".TimeLeftParent");
         timeLeftParent.forEach(function (element) {
-            //setInterval(function () {
-                var currentTime = parseFloat(element.children[0].textContent)
-            var day = Math.floor(currentTime * 0.0000000115741);
-           
-                var remaining = day % 86400000;
-                var hour = Math.floor(remaining / 3600000);
-                remaining = remaining % 3600000;
 
-                 var minute = Math.floor(remaining / 60000);
-                remaining = remaining % 60000;
+            var currentTime = parseFloat(element.children[0].textContent)
+            var day = Math.floor(currentTime / (1000 * 60 * 60 * 24));
+            var hour = Math.floor((currentTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minute = Math.floor((currentTime % (1000 * 60 * 60)) / (1000 * 60));
+            var second = Math.floor((currentTime % (1000 * 60)) / 1000);
 
-                var second = Math.floor(remaining / 1000)
 
-                var output = element.children[1].textContent
-                //console.log(output);
             element.children[0].textContent = currentTime - 1000;
-            
-                element.children[1].textContent = day + "d " + hour + "h " + minute + "m " + second + "s ";
-           // }, 1000);
-            
-        });
-        
-    }
-    window.onload = setInterval(FormatTime,1000);
 
-</script>*@
+            element.children[1].textContent = day + "d " + hour + "h " + minute + "m " + second + "s ";
+
+
+        });
+
+    }
+
+    setInterval(FormatTime, 1000);
+
+    function Completed(formElement, element) {
+        if (confirm('Are you sure you want to mark this item as completed?')) {
+
+            formElement.submit();
+        } else {
+            element.checked = false;
+        }
+
+    }
+
+    function openDetails(element) {
+        var detail = element.nextSibling.nextSibling;
+        var btn = element.querySelector(".btn-details");
+        
+        if (btn.classList.contains("hidedetails")) {
+            
+            btn.innerHTML = "View Details";
+        } else {
+            btn.innerHTML = "Hide Details";
+        }
+        btn.classList.toggle("hidedetails");
+        detail.classList.toggle("closedet");
+    }
+</script>

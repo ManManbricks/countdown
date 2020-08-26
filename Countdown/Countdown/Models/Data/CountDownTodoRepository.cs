@@ -24,5 +24,16 @@ namespace Countdown.Models.Data
             context.SaveChanges();
             return item;
         }
+
+        public Todo MarkComplete(int id)
+        {
+            Todo item = context.Todoes.Where(x => x.Id == id).FirstOrDefault();
+            if(item != null)
+            {
+                item.DueDate = DateTime.Now;
+                context.SaveChanges();
+            }
+            return item;
+        }
     }
 }

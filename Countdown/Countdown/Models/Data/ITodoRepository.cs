@@ -7,5 +7,7 @@ namespace Countdown.Models.Data
         IEnumerable<Todo> Todoes { get; }
 
         Todo Create(Todo todo);
+
+        Todo MarkComplete(int id);
     }
 }

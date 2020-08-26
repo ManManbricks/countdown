@@ -181,8 +181,10 @@ namespace Countdown.Models
 
     }
 
-    public class ViewTodoViewModel
+    public class TodoViewModel
     {
+        public int Id { get; set; }
+
         public string CurrentUserId;
         public string Title { get; set; }
         public double TimeLeft { get; set; }
@@ -196,5 +198,31 @@ namespace Countdown.Models
         public string AssignedToFirstName { get; set; }
 
         public bool IsCompleted { get; set; }
+    }
+
+    public class ViewTodoViewModel
+    {
+        public TodoFilter TodoFilter { get; set; }
+
+        public IEnumerable<TodoViewModel> TodoViewModels { get; set; }
+
+    }
+
+    public class TodoFilter
+    {
+        [Display(Name = "Owned by me")]
+        public bool OwnedByMe { get; set; }
+
+        [Display(Name = "Owned by others")]
+        public bool OwnedByOthers { get; set; }
+
+        [Display(Name = "Assigned to others")]
+        public bool AssignedToOthers { get; set; }
+
+        [Display(Name = "Completed")]
+        public bool Completed { get; set; }
+
+        [Display(Name = "Pending")]
+        public bool Pending { get; set; }
     }
 }

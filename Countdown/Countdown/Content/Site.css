@@ -23,3 +23,40 @@ select,
 textarea {
     max-width: 280px;
 }
+
+.owner.c0{
+    color: red;
+}
+
+.owner.c1{
+    color: brown;
+}
+
+.owner.c2 {
+    color: orange;
+}
+
+.assign.c0 {
+    color: blue;
+}
+
+.assign.c1 {
+    color: maroon;
+}
+
+.assign.c2 {
+    color: purple;
+}
+tr {
+    
+    transition: all 2s ease-in;
+}
+tr.closedet{
+    display:none;
+   
+}
+
+.btn.hidedetails{
+    content: "Hide Details";
+}
+

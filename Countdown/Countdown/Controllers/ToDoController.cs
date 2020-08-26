@@ -15,19 +15,19 @@ namespace Countdown.Controllers
     public class TodoController : AccountController
     {
         private ITodoRepository todoRepository;
-        public TodoController(ApplicationUserManager userManager, ApplicationSignInManager signInManager,ITodoRepository todoRepository) : base(userManager, signInManager)
+        public TodoController(ApplicationUserManager userManager, ApplicationSignInManager signInManager, ITodoRepository todoRepository) : base(userManager, signInManager)
         {
             this.todoRepository = todoRepository;
         }
 
-      
+
 
         // GET: ToDo
 
         public ActionResult Create()
         {
             CreateTodoViewModel model = CreateTodoViewModel();
-            
+
 
             return View(model);
         }
@@ -40,9 +40,9 @@ namespace Countdown.Controllers
         }
         private CreateTodoViewModel CreateTodoViewModel()
         {
-           
+
             List<SelectListItem> registeredUsers = GetRegisteredUsers();
-            
+
             CreateTodoViewModel model = new CreateTodoViewModel
             {
                 StartDate = DateTime.Now.Date.ToString("yyyy/MM/dd"),
@@ -68,31 +68,32 @@ namespace Countdown.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(CreateTodoViewModel model)
         {
-                     
+
             if (ModelState.IsValid)
             {
-                 DateTime startDate = GetDateTimeFromString(model.StartDate, model.StartTime);
-                 DateTime dueDate = GetDateTimeFromString(model.DueDate, model.DueTime);
-               
-                Todo todo = new Todo { 
+                DateTime startDate = GetDateTimeFromString(model.StartDate, model.StartTime);
+                DateTime dueDate = GetDateTimeFromString(model.DueDate, model.DueTime);
+
+                Todo todo = new Todo
+                {
                     Title = model.Title,
                     Description = model.Description,
-                    StartDate =  startDate,
+                    StartDate = startDate,
                     DueDate = dueDate,
                     AssignedTo = model.AssignedTo,
                     Owner = model.Owner
                 };
 
                 todoRepository.Create(todo);
-                    TempData["TodoSuccess"] = "Todo item " + todo.Title + " added successfully";
-                    return RedirectToAction("Index", "Home");
+                TempData["TodoSuccess"] = "Todo item " + todo.Title + " added successfully";
+                return RedirectToAction("Index", "Home");
 
             }
-            
-                model.RegisteredUsers = GetRegisteredUsers();
-                return View(model);
 
-           
+            model.RegisteredUsers = GetRegisteredUsers();
+            return View(model);
+
+
 
 
 
@@ -100,8 +101,8 @@ namespace Countdown.Controllers
 
         private DateTime GetDateTimeFromString(String date, String time)
         {
-            DateTime.TryParseExact(date, "yyyy/MM/dd", CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None,out DateTime startDate);
-           
+            DateTime.TryParseExact(date, "yyyy/MM/dd", CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime startDate);
+
             DateTime.TryParseExact(time, "hh:mm:ss tt", CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime startTime);
 
             startDate = startDate.Date + new TimeSpan(startTime.Hour, startTime.Minute, startTime.Second);
@@ -111,19 +112,27 @@ namespace Countdown.Controllers
         public ActionResult List()
         {
             ApplicationUser user = GetCurrentUser();
-
-            return View(todoRepository.Todoes.Select(x => new ViewTodoViewModel {
-            
+            IEnumerable<TodoViewModel> todoViewModels = todoRepository.Todoes.Select(x => new TodoViewModel
+            {
+                Id = x.Id,
                 Title = x.Title,
-                 AssignedTo = x.AssignedTo,
-                 AssignedToFirstName = GetUser(x.AssignedTo).FirstName,
-                 CurrentUserId = user.Id,
-                  IsCompleted = true,
-                   Owner = x.Owner,
-                   OwnerFirstName = GetUser(x.Owner).FirstName,
-                   TimeLeft = x.DueDate.Subtract(DateTime.Now).TotalMilliseconds
-            
-            }));
+                AssignedTo = x.AssignedTo,
+                AssignedToFirstName = GetUser(x.AssignedTo).FirstName,
+                CurrentUserId = user.Id,
+                IsCompleted = x.DueDate <= DateTime.Now,
+                Owner = x.Owner,
+                OwnerFirstName = GetUser(x.Owner).FirstName,
+                TimeLeft = x.DueDate.Subtract(DateTime.Now).TotalMilliseconds
+
+
+            });
+
+            return View(new ViewTodoViewModel
+            {
+                TodoFilter = new TodoFilter(),
+                TodoViewModels = todoViewModels
+
+            });
         }
 
         private ApplicationUser GetUser(string id)
@@ -132,6 +141,91 @@ namespace Countdown.Controllers
             return user;
         }
 
-        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Filter(ViewTodoViewModel model)
+        {
+            ApplicationUser user = GetCurrentUser();
+            IEnumerable<TodoViewModel> todoViewModels = todoRepository.Todoes.Select(x => new TodoViewModel
+            {
+                Id = x.Id,
+                Title = x.Title,
+                AssignedTo = x.AssignedTo,
+                AssignedToFirstName = GetUser(x.AssignedTo).FirstName,
+                CurrentUserId = user.Id,
+                IsCompleted = x.DueDate <= DateTime.Now,
+                Owner = x.Owner,
+                OwnerFirstName = GetUser(x.Owner).FirstName,
+                TimeLeft = x.DueDate.Subtract(DateTime.Now).TotalMilliseconds
+
+
+            });
+
+            if (model.TodoFilter.OwnedByMe)
+            {
+                todoViewModels = todoViewModels.Where(p => p.Owner.Equals(user.Id));
+            }
+
+            if (model.TodoFilter.OwnedByOthers)
+            {
+                todoViewModels = todoViewModels.Where(p => !p.Owner.Equals(user.Id));
+            }
+
+            if (model.TodoFilter.AssignedToOthers)
+            {
+                todoViewModels = todoViewModels.Where(p => !p.AssignedTo.Equals(user.Id));
+            }
+
+            if (model.TodoFilter.Completed)
+            {
+                todoViewModels = todoViewModels.Where(p => p.TimeLeft <= 0);
+            }
+
+            if (model.TodoFilter.Pending)
+            {
+                todoViewModels = todoViewModels.Where(p => p.TimeLeft > 0);
+            }
+
+            model.TodoViewModels = todoViewModels;
+            return View("List", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult MarkComplete(int id)
+        {
+            Todo item = todoRepository.MarkComplete(id);
+           
+            if(item == null)
+            {
+                ViewBag.ErrorMessage = "Todo Item could not be marked as complete";
+            }
+            else
+            {
+                ViewBag.SuccessMessage = "Todo Item marked as complete successfully";
+            }
+            ApplicationUser user = GetCurrentUser();
+            IEnumerable<TodoViewModel> todoViewModels = todoRepository.Todoes.Select(x => new TodoViewModel
+            {
+                Id = x.Id,
+                Title = x.Title,
+                AssignedTo = x.AssignedTo,
+                AssignedToFirstName = GetUser(x.AssignedTo).FirstName,
+                CurrentUserId = user.Id,
+                IsCompleted = x.DueDate <= DateTime.Now,
+                Owner = x.Owner,
+                OwnerFirstName = GetUser(x.Owner).FirstName,
+                TimeLeft = x.DueDate.Subtract(DateTime.Now).TotalMilliseconds
+
+
+            });
+
+            return View("List",new ViewTodoViewModel
+            {
+                TodoFilter = new TodoFilter(),
+                TodoViewModels = todoViewModels
+
+            });
+        }
     }
 }
